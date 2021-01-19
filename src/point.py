@@ -1,9 +1,10 @@
 import math
 
 class Point:
-    def __init__(self, latit_, longit_):
+    def __init__(self, latit_, longit_, name_=""):
         self.latit = latit_
         self.longit = longit_
+        self.name = name_
 
     def euclidean_distance(self, another_point):
         return math.sqrt(math.pow(self.latit - another_point.latit, 2.0) + math.pow(self.longit - another_point.longit, 2.0))

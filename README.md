@@ -49,3 +49,7 @@ The program repeats these two steps until the cluster centroids converge and do 
 # To deactivate the conda environment:
 
 `conda deactivate`
+
+
+
+python -m src.run --input input.csv --clusters  3

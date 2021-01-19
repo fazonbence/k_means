@@ -13,6 +13,13 @@ class KMeans:
         self.clusters = None  # clusters of nodes
         self.means = []     # means of clusters
         self.debug = False  # debug flag
+        self.examdebug= True
+        self.randomstart=False
+        if not self.randomstart:
+            print("####################################")
+            print("Random initial clusters is disabled!")
+            print("Please give the name of the point in the initial_means function")
+            print("####################################")
 
     def next_random(self, index, points, clusters):
         # this method returns the next random node
@@ -50,20 +57,36 @@ class KMeans:
     def initial_means(self, points):
         # compute the initial means
         # pick the first node at random
-        point_ = rand.choice(points)
-        if self.debug:
-            print("point#0: {} {}".format(point_.latit, point_.longit))
         clusters = dict()
-        clusters.setdefault(0, []).append(point_)
-        points.remove(point_)
-        #now let's pick k-1 more random points
-        for i in range(1, self.k):
-            point_ = self.next_random(i, points, clusters)
+        if self.randomstart:
+            point_ = rand.choice(points)
             if self.debug:
-                print("point#{}: {} {}".format(i, point_.latit, point_.longit))
-            #clusters.append([point_])
-            clusters.setdefault(i, []).append(point_)
+                print("point#0: {} {}".format(point_.latit, point_.longit))            
+            clusters.setdefault(0, []).append(point_)
             points.remove(point_)
+            #now let's pick k-1 more random points
+            for i in range(1, self.k):
+                point_ = self.next_random(i, points, clusters)
+                if self.debug:
+                    print("point#{}: {} {}".format(i, point_.latit, point_.longit))
+                #clusters.append([point_])
+                clusters.setdefault(i, []).append(point_)
+                points.remove(point_)
+        else:
+            #not the best but it works
+            #Starting points here
+            selectedStartPoints=["A", "C", "E"]
+            results=[]
+            for name in selectedStartPoints:
+                
+                results+=[t for t in points if t.name==name]
+                
+            print("####################################")
+            print(results)
+            print("####################################")
+            for i in range(0, self.k):
+                clusters.setdefault(i, []).append(results[i])                
+            print("asd")
         # compute mean of clusters
         self.means = self.compute_means(clusters)
         if self.debug:
@@ -105,8 +128,14 @@ class KMeans:
             min_ = dist[0]
             for d in dist:
                 if d < min_:
-                    min_ = d
-                    index = cnt_
+                    if d==min_:
+                        min_ = d
+                        index = cnt_
+                        #flag
+                        print("Equal distance, panic")
+                    else:                        
+                        min_ = d
+                        index = cnt_
                 cnt_ += 1
             if self.debug:
                 print("index: {}".format(index))
@@ -145,7 +174,7 @@ class KMeans:
             print("nodes in cluster #{}".format(cluster_id))
             cluster_id += 1
             for point in cluster:
-                print("point({},{})".format(point.latit, point.longit))
+                print("{} point({},{})".format(point.name,point.latit, point.longit))
 
     def print_means(self, means):
         # print means
@@ -162,22 +191,44 @@ class KMeans:
         stop = False
         iterations = 1
         print("Starting K-Means...")
+        prevclusters={"Name": "", "X":"", "Y":""}
         while not stop:
             # assignment step: assign each node to the cluster with the closest mean
             points_ = [point for point in self.geo_locations]
+            
             clusters = self.assign_points(points_)
-            if self.debug:
-                self.print_clusters(clusters)
+            if prevclusters==clusters:
+                iterations -= 1
+                break
+           
             means = self.compute_means(clusters)
             if self.debug:
                 print("means:")
                 self.print_means(means)
                 print("update mean:")
-            stop = self.update_means(means, 0.01)
+            
+            if self.debug or self.examdebug:
+                print("#######################")                
+                print("Iteration: {}".format(iterations))
+                print("Clusters:")
+                self.print_clusters(clusters)
+                print("\nCentroids:")
+                self.print_means(means)
+                if self.debug:                    
+                    print("#######################")
+                    print("printing prevclusters")
+                    self.print_clusters(prevclusters)
+            
+            
+            #stop = self.update_means(means, 0.01)
+            #stop=prevclusters==clusters
+            
             if not stop:
                 self.means = []
                 self.means = means
             iterations += 1
+            prevclusters=clusters
+       
         print("K-Means is completed in {} iterations. Check outputs.csv for clustering results!".format(iterations))
         self.clusters = clusters
         #plot cluster for evluation
@@ -191,8 +242,8 @@ class KMeans:
                 latits = []
                 longits = []
                 for point in cluster:
-                    latits.append(point.latit)
-                    longits.append(point.longit)
+                    latits.append(point.longit)
+                    longits.append(point.latit)
                 ax.scatter(longits, latits, s=60, c=colors[cnt], marker=markers[cnt])
                 cnt += 1
             plt.show()
